@@ -18,6 +18,7 @@ public:
     // إحصائيات
     int stepsDFS = 0, backtracksDFS = 0;
     int stepsImproved = 0, backtracksImproved = 0;
+    int stepsMinConflicts = 0;
 
     Sudoku() {
         for (int r = 0; r < 9; r++)
@@ -35,7 +36,7 @@ public:
         system("clear");
 #endif
         cout << "\n=========== SUDOKU SOLVER ===========\n";
-        cout << " Using DFS Backtracking (Basic & Improved)\n";
+        cout << " Using DFS Backtracking (Basic & Improved) & Min-Conflicts\n";
         cout << "======================================\n\n";
 
         for (int r = 0; r < 9; r++) {
@@ -188,6 +189,74 @@ public:
     }
 
     // ============================
+    // Min-Conflicts
+    // ============================
+    bool solveMinConflicts(int maxSteps = 10000) {
+        vector<pair<int, int>> emptyCells;
+        for (int r = 0; r < 9; r++)
+            for (int c = 0; c < 9; c++)
+                if (grid[r][c] == 0)
+                    emptyCells.push_back({ r,c });
+
+        // ملأ عشوائي
+        for (auto& cell : emptyCells) {
+            int r = cell.first;
+            int c = cell.second;
+            vector<int> vals = getPossibleValues(r, c);
+            if (vals.empty()) vals = { 1,2,3,4,5,6,7,8,9 };
+            grid[r][c] = vals[rand() % vals.size()];
+        }
+
+        // الخطوات
+        for (int step = 0; step < maxSteps; step++) {
+            stepsMinConflicts++;
+            vector<pair<int, int>> conflicts;
+            for (auto& cell : emptyCells) {
+                int r = cell.first;
+                int c = cell.second;
+                int conf = 0;
+                for (int i = 0; i < 9; i++) {
+                    if (i != c && grid[r][i] == grid[r][c]) conf++;
+                    if (i != r && grid[i][c] == grid[r][c]) conf++;
+                }
+                int sr = (r / 3) * 3, sc = (c / 3) * 3;
+                for (int i = 0; i < 3; i++)
+                    for (int j = 0; j < 3; j++)
+                        if ((sr + i != r || sc + j != c) && grid[sr + i][sc + j] == grid[r][c])
+                            conf++;
+                if (conf > 0) conflicts.push_back({ r,c });
+            }
+
+            if (conflicts.empty()) return true;
+
+            auto cell = conflicts[rand() % conflicts.size()];
+            int r = cell.first, c = cell.second;
+
+            int bestVal = grid[r][c];
+            int minConf = 100;
+            for (int val = 1; val <= 9; val++) {
+                grid[r][c] = val;
+                int conf = 0;
+                for (int i = 0; i < 9; i++) {
+                    if (i != c && grid[r][i] == val) conf++;
+                    if (i != r && grid[i][c] == val) conf++;
+                }
+                int sr = (r / 3) * 3, sc = (c / 3) * 3;
+                for (int i = 0; i < 3; i++)
+                    for (int j = 0; j < 3; j++)
+                        if ((sr + i != r || sc + j != c) && grid[sr + i][sc + j] == val)
+                            conf++;
+                if (conf < minConf) {
+                    minConf = conf;
+                    bestVal = val;
+                }
+            }
+            grid[r][c] = bestVal;
+        }
+        return false;
+    }
+
+    // ============================
     // توليد لوحة عشوائية
     // ============================
     void fillComplete() {
@@ -266,6 +335,7 @@ public:
 
         restoreOriginal();
 
+        copyOriginal();
         stepsImproved = backtracksImproved = 0;
         start = high_resolution_clock::now();
         bool solvedImp = solveImprovedWithStats();
@@ -277,6 +347,20 @@ public:
             << "  عدد العقد = " << stepsImproved << "\n"
             << "  عدد التراجعات = " << backtracksImproved << "\n"
             << "  وقت الحل = " << timeImp << " ms\n";
+
+        restoreOriginal();
+
+        copyOriginal();
+        stepsMinConflicts = 0;
+        start = high_resolution_clock::now();
+        bool solvedMC = solveMinConflicts();
+        end = high_resolution_clock::now();
+        auto timeMC = duration_cast<milliseconds>(end - start).count();
+
+        cout << "\nMin-Conflicts:\n"
+            << "  حل = " << (solvedMC ? "نعم" : "لا") << "\n"
+            << "  عدد الخطوات = " << stepsMinConflicts << "\n"
+            << "  وقت الحل = " << timeMC << " ms\n";
     }
 };
 
@@ -295,7 +379,8 @@ int main() {
         cout << "4) خروج\n";
         cout << "5) توليد لوحة عشوائية\n";
         cout << "6) حل محسّن (MRV + LCV + FC)\n";
-        cout << "7) مقارنة الخوارزميات\n";
+        cout << "7) حل Min-Conflicts\n";
+        cout << "8) مقارنة الخوارزميات\n";
         cout << "اختر: ";
         cin >> choice;
 
@@ -305,7 +390,8 @@ int main() {
         else if (choice == 4) break;
         else if (choice == 5) s.generateRandom();
         else if (choice == 6) s.solveImprovedWithStats();
-        else if (choice == 7) s.compareSolvers();
+        else if (choice == 7) s.solveMinConflicts();
+        else if (choice == 8) s.compareSolvers();
     }
 
     return 0;
