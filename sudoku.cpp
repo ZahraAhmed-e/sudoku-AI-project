@@ -1,13 +1,14 @@
-Zahra El, [02/12/2025 07:50 م]
-#pragma once
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include <vector>
+#include <algorithm>
+
 using namespace std;
 
 class Sudoku {
 private:
-    int grid[9][9]; // اللوحة
+    int grid[9][9];
 
 public:
     Sudoku() {
@@ -26,7 +27,7 @@ public:
         system("clear");
 #endif
         cout << "\n=========== SUDOKU SOLVER ===========\n";
-        cout << "         Using DFS Backtracking\n";
+        cout << " Using DFS Backtracking (Basic & Improved)\n";
         cout << "======================================\n\n";
 
         for (int r = 0; r < 9; r++) {
@@ -34,61 +35,28 @@ public:
                 cout << "-----------------------------------------\n";
 
             for (int c = 0; c < 9; c++) {
+                if (c % 3 == 0) cout << "| ";
 
-                if (c % 3 == 0)
-                    cout << "| ";
-
-                if (grid[r][c] == 0)
-                    cout << ". ";
-                else
-                    cout << grid[r][c] << " ";
+                if (grid[r][c] == 0) cout << ". ";
+                else cout << grid[r][c] << " ";
             }
-
             cout << "|\n";
         }
-
         cout << "-----------------------------------------\n\n";
     }
 
     // ============================
-    // قراءة لوحة من المستخدم
+    // إدخال اللوحة
     // ============================
-    // void readFromUser() {
-    //     cout << "أدخل لوحة سودوكو (0 = خانة فارغة):\n";
-    //     for (int r = 0; r < 9; r++)
-    //         for (int c = 0; c < 9; c++)
-    //             cin >> grid[r][c];
-    // }
-void readFromUser() {
-    cout << "أدخل لوحة سودوكو (0 = خانة فارغة، الأرقام من 1 إلى 9 فقط):\n";
-    for (int r = 0; r < 9; r++) {
-        for (int c = 0; c < 9; c++) {
-            int val;
-            while (true) {
-                cout << "الخانة [" << r + 1 << "][" << c + 1 << "]: ";
-                cin >> val;
-
-                // تحقق من أن الرقم بين 0 و 9
-                if (val < 0 || val > 9) {
-                    cout << "❌ الرقم يجب أن يكون بين 0 و 9. حاول مرة أخرى.\n";
-                    continue;
-                }
-
-                // إذا الرقم ليس صفر، تحقق من الصف والعمود والصندوق
-                if (val != 0 && !isSafe(r, c, val)) {
-                    cout << "❌ الرقم " << val << " موجود بالفعل في الصف أو العمود أو الصندوق. حاول رقم آخر.\n";
-                    continue;
-                }
-
-                break; // الرقم صحيح، اكسر الحلقة
-            }
-            grid[r][c] = val;
-        }
+    void readFromUser() {
+        cout << "أدخل لوحة سودوكو (0 = خانة فارغة):\n";
+        for (int r = 0; r < 9; r++)
+            for (int c = 0; c < 9; c++)
+                cin >> grid[r][c];
     }
-}
 
     // ============================
-    // التحقق من الصف / العمود / الصندوق
+    // فحص القواعد
     // ============================
     bool checkRow(int row, int val) const {
         for (int c = 0; c < 9; c++)
@@ -112,38 +80,41 @@ void readFromUser() {
     }
 
     bool isSafe(int row, int col, int val) const {
-        return checkRow(row, val) && checkCol(col, val) && checkBox(row, col, val);
+        return checkRow(row, val) &&
+            checkCol(col, val) &&
+            checkBox(row, col, val);
     }
 
     // ============================
     // البحث عن أول خانة فارغة
     // ============================
-    bool findEmpty(int &row, int &col) const {
+    bool findEmpty(int& row, int& col) const {
         for (row = 0; row < 9; row++)
             for (col = 0; col < 9; col++)
-                if (grid[row][col] == 0) return true;
+                if (grid[row][col] == 0)
+                    return true;
         return false;
     }
 
     // ============================
-    // حل السودوكو Backtracking
+    // الحل الأساسي (DFS + Backtracking)
     // ============================
     bool solve() {
         int row, col;
-        if (!findEmpty(row, col)) return true; // انتهى
+        if (!findEmpty(row, col)) return true;
 
         for (int num = 1; num <= 9; num++) {
             if (isSafe(row, col, num)) {
                 grid[row][col] = num;
                 if (solve()) return true;
-                grid[row][col] = 0; // backtrack
+                grid[row][col] = 0;
             }
         }
         return false;
     }
 
     // ============================
-    // توليد لوحة كاملة عشوائية
+    // توليد لوحة عشوائية
     // ============================
     void fillComplete() {
         int numbers[9];
@@ -158,30 +129,23 @@ void readFromUser() {
         int nextRow = (col == 8) ? row + 1 : row;
         int nextCol = (col + 1) % 9;
 
-        // shuffle
         for (int i = 0; i < 9; i++) {
             int r = rand() % 9;
             swap(numbers[i], numbers[r]);
         }
 
         for (int i = 0; i < 9; i++) {
-            int num = numbers[i];
-            if (isSafe(row, col, num)) {
-                grid[row][col] = num;
-                if (fillRecursive(nextRow, nextCol, numbers)) return true;
+            if (isSafe(row, col, numbers[i])) {
+                grid[row][col] = numbers[i];
+                if (fillRecursive(nextRow, nextCol, numbers))
+                    return true;
                 grid[row][col] = 0;
             }
         }
         return false;
     }
 
-    // ============================
-
-Zahra El, [02/12/2025 07:50 م]
-// حذف بعض الأرقام لإنتاج فراغات
-    // ============================
     void removeCells(int count) {
-        srand(time(0));
         while (count > 0) {
             int r = rand() % 9;
             int c = rand() % 9;
@@ -192,15 +156,93 @@ Zahra El, [02/12/2025 07:50 م]
         }
     }
 
-    // ============================
-    // توليد لوحة عشوائية جاهزة للحل
-    // ============================
     void generateRandom() {
         fillComplete();
-        removeCells(40); // يمكنك تعديل العدد حسب الصعوبة
+        removeCells(40);
+    }
+
+    // ============================
+    // MRV + LCV + Forward Checking
+    // ============================
+
+    vector<int> getPossibleValues(int row, int col) const {
+        vector<int> vals;
+        if (grid[row][col] != 0) return vals;
+
+        for (int i = 1; i <= 9; i++)
+            if (isSafe(row, col, i))
+                vals.push_back(i);
+
+        return vals;
+    }
+
+    bool findMRVCell(int& row, int& col) const {
+        int minCount = 10;
+        bool found = false;
+
+        for (int r = 0; r < 9; r++) {
+            for (int c = 0; c < 9; c++) {
+                if (grid[r][c] == 0) {
+                    int size = getPossibleValues(r, c).size();
+                    if (size == 0) return false;
+                    if (size < minCount) {
+                        minCount = size;
+                        row = r;
+                        col = c;
+                        found = true;
+                    }
+                }
+            }
+        }
+        return found;
+    }
+
+    vector<int> getLCVOrder(int row, int col) const {
+        vector<int> vals = getPossibleValues(row, col);
+
+        sort(vals.begin(), vals.end(), [&](int a, int b) {
+            int ca = 0, cb = 0;
+            for (int r = 0; r < 9; r++)
+                for (int c = 0; c < 9; c++)
+                    if (grid[r][c] == 0) {
+                        if (isSafe(r, c, a)) ca++;
+                        if (isSafe(r, c, b)) cb++;
+                    }
+            return ca > cb;
+            });
+
+        return vals;
+    }
+
+    bool forwardCheck() const {
+        for (int r = 0; r < 9; r++)
+            for (int c = 0; c < 9; c++)
+                if (grid[r][c] == 0 &&
+                    getPossibleValues(r, c).empty())
+                    return false;
+        return true;
+    }
+
+    // ============================
+    // الحل المحسّن
+    // ============================
+    bool solveImproved() {
+        int row, col;
+        if (!findMRVCell(row, col)) return true;
+
+        for (int num : getLCVOrder(row, col)) {
+            grid[row][col] = num;
+            if (forwardCheck() && solveImproved())
+                return true;
+            grid[row][col] = 0;
+        }
+        return false;
     }
 };
 
+// ============================
+// main
+// ============================
 int main() {
     Sudoku s;
     int choice;
@@ -208,54 +250,20 @@ int main() {
     while (true) {
         s.printUI();
         cout << "1) إدخال لوحة سودوكو\n";
-        cout << "2) حل السودوكو (DFS)\n";
+        cout << "2) حل DFS عادي\n";
         cout << "3) مسح اللوحة\n";
         cout << "4) خروج\n";
-        cout << "5) توليد لوحة عشوائية\n\n";
-
+        cout << "5) توليد لوحة عشوائية\n";
+        cout << "6) حل محسّن (MRV + LCV + FC)\n\n";
         cout << "اختر: ";
         cin >> choice;
 
-        if (choice == 1) {
-            s.readFromUser();
-        }
-        else if (choice == 2) {
-            cout << "\nجاري الحل...\n\n";
-            if (s.solve()) {
-                cout << " تم إيجاد الحل بنجاح!\n\n";
-                s.printUI();
-            }
-            else {
-                cout << " لا يوجد حل لهذه اللوحة!\n";
-            }
-
-#ifdef _WIN32
-            system("pause");
-#else
-            cout << "اضغط ENTER للاستمرار...";
-            cin.ignore();
-            cin.get();
-#endif
-        }
-        else if (choice == 3) {
-            s = Sudoku(); // Reset
-        }
-        else if (choice == 4) {
-            break;
-        }
-        else if (choice == 5) {
-            s.generateRandom();
-            cout << "تم توليد لوحة عشوائية قابلة للحل.\n";
-#ifdef _WIN32
-            system("pause");
-#else
-            cout << "اضغط ENTER للاستمرار...";
-            cin.ignore();
-            cin.get();
-#endif
-        }
+        if (choice == 1) s.readFromUser();
+        else if (choice == 2) s.solve();
+        else if (choice == 3) s = Sudoku();
+        else if (choice == 4) break;
+        else if (choice == 5) s.generateRandom();
+        else if (choice == 6) s.solveImproved();
     }
-
     return 0;
-
 }
